@@ -77,7 +77,9 @@ var init = function(){
 	scores = {0:0, 1:0};
 
 	GLOBALS.ready_players = {};
+
 	GLOBALS.ready_players.id = {}
+
 	GLOBALS.ready_players.count = {0:0, 1:0}
 
 	GLOBALS.players = {};

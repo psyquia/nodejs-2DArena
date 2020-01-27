@@ -190,15 +190,15 @@ module.exports = class Player extends Entity{
 				this.shootCd = 5;
 				break;
 			case 'wallbang':
-				this.shootBullet(dir,40,4,'rgb(255,0,255)',3,-15);
-				this.shootCd = 10;
+				this.shootBullet(dir,49,4,'rgb(255,0,255)',5,-38);
+				this.shootCd = 1;
 		}
 		
 	}
 
 	shootBullet(angle,width,height,color,vel,off){
 		var b = new Bullet(GLOBALS, this, angle, vel);
-		b.x = this.facingRight ? this.x + 10 + off : this.x - width/2-5;
+		b.x = this.facingRight ? this.x + 10 + off : this.x - width/2-5 -off/2;
 		b.y = this.y+10;
 		b.hitbox.width = width;
 		b.hitbox.height = height;

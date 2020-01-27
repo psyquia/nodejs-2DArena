@@ -4,7 +4,7 @@ var GLOBALS = {};
 
 module.exports = class Bullet extends Entity{
 	constructor(global_p, parent, angle, vel){
-		if(!arguments[2]){
+		if(!arguments[3]){
 			var vel = 1;
 		}
 		super();
@@ -15,9 +15,9 @@ module.exports = class Bullet extends Entity{
 		this.team = parent.armorKey;
 		this.timer = 0;
 		this.toRemove = false;
-		this.type = 'wallbang';
+		this.type = '';
 		this.hitbox = {px:this.x+4, py:this.y, width:7, height:5};
-		this.dmg = {normal:5, cone:2, wallbang:15};
+		this.dmg = {normal:5, cone:2, wallbang:2.3};
 		GLOBALS = global_p;
 		GLOBALS.bullets[this.id] = this;
 	}
