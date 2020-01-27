@@ -1,3 +1,12 @@
+const Entity = require('./entity.js')
+
+///*******************************************************///
+/// CHOOSE THE NUMBER OF PLAYERS IN A MATCH
+
+var NO_OF_PLAYERS = 2;	/// 2 OR 4 (1 vs 1 OR 2 vs 2)
+
+///*******************************************************///
+
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
@@ -18,6 +27,8 @@ colors = {orange: 'rgb(255,110,0)', cyan: 'rgb(0,255,255)', green:'rgb(0,255,0)'
 			iron: 'rgb(255,0,0)', purple: 'rgb(103,38,255)', rescue: 'rgb(73,38,106)'};
 
 var game = {start: 0, running: 1, paused:2, over:3};
+
+/// CHOOSE TEAM COLORS: 0 => TEAM 1; 1 => TEAM 2
 var teams = {2:'cyan', 3:'orange', 0:'iron', 5:'green', 4:'purple', 1:'rescue'};
 
 var state = game.start;
@@ -138,35 +149,7 @@ var game_end = function(){
 		var butt = new Button(400,253,100,75,'rgb(0,200,0)');
 }
 //----------------------------------------------------------------------//
-class Entity{
-	constructor(x,y){
-		if(!arguments.length){
-			this.x = 250;
-			this.y = 250;
-		}else{
-			this.x = x;
-			this.y = y;
-		}
-		this.spdX = 0;
-		this.spdY = 0;
-		this.id = 0;
-		this.hitbox = {px:this.x, py:this.y, width:0, height:0};
-	}
-	update(){
-		this.updatePosition();
-	}
-	updatePosition(){
-		this.x += this.spdX;
-		this.y += this.spdY;
-	}
-	getDistance(pt){
-		return Math.sqrt(Math.pow(this.x-pt.x,2) + Math.pow(this.y-pt.y,2));
-	}
-	hitboxUpdate(){
-	}
-}
 
-//----------------------------------------------------------------------//
 class Player extends Entity{
 	constructor(id,x,y){
 		if(arguments.length>1){
@@ -195,7 +178,7 @@ class Player extends Entity{
 		this.gun = 'normal';
 		this.slot = -1;
 		this.armorKey = 0;
-		this.armor = teams;
+		this.armors = teams;
 		this.hitbox = {px:this.x-5, py:this.y-19, width:27, height:49, 
 			xoff: -5, yoff: -19};
 		this.maxHp = 100;
@@ -214,7 +197,7 @@ class Player extends Entity{
 		this.jump = {count:10, frame:1};
 		this.alive = true;
 		this.gun = 'normal';
-		this.x = spawn.points[j].x;
+		this.x = spawn.points[j].x - this.hitbox.xoff - Math.ceil(this.hitbox.width/2);
 		this.y = spawn.points[j].y;
 		this.armorKey = Math.floor(j/2);
 		this.facingRight = (j<2) ? true : false;
@@ -425,7 +408,7 @@ Player.addPlayer = function(socket,team){
 	var player = Player.list[socket.id];
 	player.in = true;
 	player.alive = true;
-	player.x = spawn.points[i].x;
+	player.x = spawn.points[i].x - player.hitbox.xoff - Math.ceil(player.hitbox.width/2);
 	player.y = spawn.points[i].y;
 	player.slot = i;
 	player.armorKey = Math.floor(i/2);
@@ -442,22 +425,26 @@ Player.chooseSpawn = function(team){
 			j = 1;
 		else if(spawn.slots[1])
 			j = 0;
-		else
+		else if(NO_OF_PLAYERS>2)
 			j = Math.floor(Math.random() * 10)%2;
+		else
+			j = 0;
 	}else if(team == 1){
 		if(spawn.slots[2])
 			j = 3;
 		else if(spawn.slots[3])
 			j = 2;
-		else
+		else if(NO_OF_PLAYERS>2)
 			j = Math.floor(Math.random() * 10)%2 + 2;
+		else
+			j = 2;
 	}
 	return j;
 }
 
 
 Player.onReady = function(socket,team){
-	if(ready_players.count[team]>=2){
+	if(ready_players.count[team]>=NO_OF_PLAYERS/2){
 		return false;
 	}
 	ready_players.count[team]++;
@@ -668,7 +655,7 @@ class Button extends Entity{
 	ready_0(ID){
 		if(!ready_players.id[ID] && Player.onReady(SOCKET_LIST[ID],0)){
 			ready_players.id[ID] = true;
-			if(Object.size(ready_players.id)>=4){
+			if(Object.size(ready_players.id)>=NO_OF_PLAYERS){
 				state = game.running;
 				stage_1();
 				delete Button.list[this.id];
@@ -680,7 +667,7 @@ class Button extends Entity{
 	ready_1(ID){
 		if(!ready_players.id[ID] && Player.onReady(SOCKET_LIST[ID],1)){
 			ready_players.id[ID] = true;
-			if(Object.size(ready_players.id)>=4){
+			if(Object.size(ready_players.id)>=NO_OF_PLAYERS){
 				state = game.running;
 				stage_1();
 				delete Button.list[this.id];
@@ -717,7 +704,8 @@ io.sockets.on('connection', function(socket){
 	}
 
 	socket.emit('init',{
-		team_names: teams, 
+		team_names: teams,
+		NO_OF_PLAYERS 
 	});
 
 	socket.id = Math.random();
@@ -791,7 +779,7 @@ loop.start = function(lastGame){
 		button:Button.update(),
 		players:Object.size(ready_players.id),
 		prev: prev_game,
-		ready_players
+		ready_players,
 	};
 	for(var i in SOCKET_LIST){
 		var socket = SOCKET_LIST[i];

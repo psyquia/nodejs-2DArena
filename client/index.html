@@ -99,6 +99,8 @@ https://cdn.socket.io/socket.io-1.4.5.js"></script>
 	var socket = io();
 	var game_state = 0;
 
+	var numPlayers = 0;
+
 	var teams = {0: '', 1: ''};
 
 	var pickup_anim = {frame:0, count:0};
@@ -108,6 +110,7 @@ https://cdn.socket.io/socket.io-1.4.5.js"></script>
 	socket.on('init', function(data){
 		teams[0] = data.team_names[0];
 		teams[1] = data.team_names[1]; 
+		numPlayers = data.NO_OF_PLAYERS;
 		console.log(teams);
 	});
 	
@@ -122,13 +125,13 @@ https://cdn.socket.io/socket.io-1.4.5.js"></script>
 		//BUTTONS
 		var but_text = {
 			ready_0: { name: function(){
-							if(data.ready_players.count[0]<2) return teams[0].toUpperCase();
+							if(data.ready_players.count[0]<numPlayers/2) return teams[0].toUpperCase();
 							else return 'FULL';
 						}
 				 		, ox: 30
 				 		, oy: 45 },
 			ready_1: { name: function(){
-							if(data.ready_players.count[1]<2) return teams[1].toUpperCase();
+							if(data.ready_players.count[1]<numPlayers/2) return teams[1].toUpperCase();
 							else return 'FULL';
 						}
 						, ox: 15
@@ -147,7 +150,7 @@ https://cdn.socket.io/socket.io-1.4.5.js"></script>
 		ctx.font = 'italic 25px serif';
 		ctx.fillStyle = 'rgb(0,0,0)';
 		ctx.fillText(data.players + " players ready", 85, 85); 
-		ctx.fillText("waiting for " + (4 - data.players) + " more player/s...", 85, 115); 
+		ctx.fillText("waiting for " + (numPlayers - data.players) + " more player/s...", 85, 115); 
 
 		//WINNER OF LAST GAME
 		if(data.prev.color != 'rgba(0,0,0,0)'){
@@ -203,7 +206,7 @@ https://cdn.socket.io/socket.io-1.4.5.js"></script>
 					//ctx.fillRect(data.player[i].x-5, data.player[i].y-19,28, 50);
 
 					var state = data.player[i].state;
-					var armor = data.player[i].armor[data.player[i].armorKey];
+					var armor = teams[data.player[i].armorKey];
 
 					if(data.player[i].facingRight){
 						ctx.drawImage(right[armor][state][data.player[i][state].frame],data.player[i].x-23,data.player[i].y-30);
