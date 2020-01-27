@@ -5,6 +5,7 @@ const Button = require('./modules/button.js');
 const Pickup = require('./modules/pickup.js');
 const Platform = require('./modules/platform.js');
 
+
 ///*******************************************************///
 /// CHOOSE THE NUMBER OF PLAYERS IN A MATCH
 
@@ -34,6 +35,8 @@ colors = {orange: 'rgb(255,110,0)', cyan: 'rgb(0,255,255)', green:'rgb(0,255,0)'
 			iron: 'rgb(255,0,0)', purple: 'rgb(103,38,255)', rescue: 'rgb(73,38,106)'};
 
 var game = {start: 0, running: 1, paused:2, over:3};
+
+/// CHOOSE TEAM COLORS: 0 => TEAM 1; 1 => TEAM 2
 var teams = {2:'cyan', 3:'orange', 0:'iron', 5:'green', 4:'purple', 1:'rescue'};
 
 
@@ -196,6 +199,7 @@ var game_end = function(){
 //----------------------------------------------------------------------//
 
 
+
 Player.addPlayer = function(socket,team){
 	var i = Player.chooseSpawn(team);
 
@@ -204,6 +208,7 @@ Player.addPlayer = function(socket,team){
 	player.alive = true;
 	player.x = GLOBALS.spawn.points[i].x - player.hitbox.xoff - Math.ceil(player.hitbox.width/2);
 	player.y = GLOBALS.spawn.points[i].y;
+
 	player.slot = i;
 	player.armorKey = Math.floor(i/2);
 	player.facingRight = (i<2) ? true : false; 
@@ -235,6 +240,7 @@ Player.chooseSpawn = function(team){
 	}
 	return j;
 }
+
 
 
 
@@ -313,6 +319,7 @@ Pickup.update = function(){
 
 
 //----------------------------------------------------------------------//
+
 
 
 Button.update = function(){
@@ -418,6 +425,7 @@ loop.start = function(lastGame){
 		players:Object.size(GLOBALS.ready_players.id),
 		prev: prev_game,
 		ready_players:GLOBALS.ready_players,
+
 	};
 	for(var i in SOCKET_LIST){
 		var socket = SOCKET_LIST[i];
