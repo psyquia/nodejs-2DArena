@@ -1,6 +1,5 @@
 const Entity = require('./entity.js');
 
-//var GLOBALS = {};
 
 module.exports = class Bullet extends Entity{
 	constructor(GLOBALS, parent, angle, vel){
@@ -18,7 +17,6 @@ module.exports = class Bullet extends Entity{
 		this.type = '';
 		this.hitbox = {px:this.x+4, py:this.y, width:7, height:5};
 		this.dmg = {normal:5, cone:2, wallbang:2.5};
-		GLOBALS = GLOBALS;
 		GLOBALS.bullets[this.id] = this;
 	}
 	p_update(GLOBALS){

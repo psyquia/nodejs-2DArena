@@ -381,7 +381,7 @@ io.sockets.on('connection', function(socket){
 	socket.on('mouseClick', function(data){
 		for(var i in GLOBALS.buttons){
 			var button = GLOBALS.buttons[i];
-			button.collision(data,socket.id);
+			button.collision(GLOBALS,data,socket.id);
 		}
 	});
 	
