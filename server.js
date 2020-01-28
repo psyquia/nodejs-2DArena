@@ -60,7 +60,9 @@ GLOBALS.kills = {};
 
 var scores = {};
 
-var round = {no:0, timer:5, checkTimer: false, seconds:0};
+var timer_max = 5;
+
+var round = {no:0, timer:timer_max, checkTimer: false, seconds:0};
 
 Object.size = function(obj) { 
 	var size = 0, key;
@@ -107,7 +109,7 @@ var init = function(){
 }
 
 GLOBALS.stage_1 = function(){
-	round.timer = 6;
+	round.timer = timer_max + 1;
 	round.checkTimer = true;
 	var time = new Date();
 	round.seconds = time.getSeconds(); 
@@ -189,7 +191,7 @@ var round_end = function(){
 	for(var i in SOCKET_LIST){
 		var socket = SOCKET_LIST[i];
 		if(GLOBALS.players[socket.id].in){
-			GLOBALS.players[socket.id].respawn();
+			GLOBALS.players[socket.id].respawn(GLOBALS);
 		}
 	}
 }
@@ -266,7 +268,7 @@ Player.update = function(){
 	for(var i in GLOBALS.players){
 		var player = GLOBALS.players[i];
 		if(round.timer==0 && player.alive)
-			player.p_update();
+			player.p_update(GLOBALS);
 		pack.push(player);
 	}
 	return pack;
@@ -286,7 +288,7 @@ Bullet.update = function(){
 	var pack = [];
 	for(var i in GLOBALS.bullets){
 		var bullet = GLOBALS.bullets[i];
-		bullet.p_update();
+		bullet.p_update(GLOBALS);
 		if(bullet.toRemove)
 			delete GLOBALS.bullets[i];
 		else{
@@ -395,7 +397,7 @@ loop.running = function(){
 		if(round.timer < 0){
 			round.timer = 0;
 			round.checkTimer = false;
-		}else if(now == (round.seconds+(6-round.timer))%60){
+		}else if(now == (round.seconds+(timer_max+1-round.timer))%60){
 			round.timer--;
 		}
 	}

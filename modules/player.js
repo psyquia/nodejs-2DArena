@@ -1,10 +1,10 @@
 const Entity = require('./entity.js');
 const Bullet = require('./bullet.js');
 
-var GLOBALS = {};
+
 
 module.exports = class Player extends Entity{
-	constructor(global_p,id,x,y){
+	constructor(GLOBALS,id,x,y){
 		if(arguments.length>2){
 			super(x,y);
 			this.alive = true;
@@ -36,11 +36,10 @@ module.exports = class Player extends Entity{
 		this.maxHp = 100;
 		this.hp = this.maxHp;
 		this.canJump = true;
-		GLOBALS = global_p;
 		GLOBALS.players[id] = this
 	}
 
-	respawn(){
+	respawn(GLOBALS){
 		var j = Player.chooseSpawn(this.armorKey);
 
 		GLOBALS.spawn.slots[j] = true;
@@ -57,7 +56,7 @@ module.exports = class Player extends Entity{
 		
 	}
 
-	p_update(){
+	p_update(GLOBALS){
 		for(var i in Player.list){
 			var inc_player = Player.list[i];
 			if(this.collision(inc_player)){
@@ -88,28 +87,10 @@ module.exports = class Player extends Entity{
 			}
 		}
 		this.updateSpd()
-		if(this.walking){
-			if(this.walk.count < 45){
-				this.walk.count++;
-			}else{
-				this.walk.count = 1;
-			}
-			this.walk.frame = Math.ceil(this.walk.count/5);
-		}else{
-			this.walk.count = 1;
-			this.walk.frame = 1;
-		}
-		if(this.jumping){
-			if(this.jump.count < 15){
-				this.jump.count++;
-			}else{
-				this.jump.frame = 3;
-			}
-			this.jump.frame = Math.ceil(this.jump.count/5);
-		}else{
-			this.jump.count = 1;
-			this.jump.frame = 1;
-		}
+		
+		update_sprite(this,'walk');
+		update_sprite(this,'jump');
+		
 		super.update();
 
 		if(this.shootCd == 0){
@@ -182,23 +163,23 @@ module.exports = class Player extends Entity{
 		var dir = this.facingRight ? 0 : 180;
 		switch(this.gun){
 			case 'normal':
-				this.shootBullet(dir,10,3,'rgb(0,180,255)',1,0);
+				this.shootBullet(dir,10,5,'rgb(0,180,255)',1,0,-10);
 				this.shootCd = 5;
 				break;
 			case 'cone':
-				for(var i = -2; i < 3; i++) this.shootBullet(dir+i*3,8,5,'rgb(255,50,50)',1,0);
+				for(var i = -2; i < 3; i++) this.shootBullet(dir+i*3,8,5,'rgb(255,50,50)',1,0,-9);
 				this.shootCd = 5;
 				break;
 			case 'wallbang':
-				this.shootBullet(dir,49,4,'rgb(255,0,255)',5,-38);
+				this.shootBullet(dir,40,4,'rgb(255,0,255)',5,-38,-1);
 				this.shootCd = 1;
 		}
 		
 	}
 
-	shootBullet(angle,width,height,color,vel,off){
+	shootBullet(angle,width,height,color,vel,r_off,l_off){
 		var b = new Bullet(GLOBALS, this, angle, vel);
-		b.x = this.facingRight ? this.x + 10 + off : this.x - width/2-5 -off/2;
+		b.x = this.facingRight ? this.x + 10 + r_off : this.x + l_off;
 		b.y = this.y+10;
 		b.hitbox.width = width;
 		b.hitbox.height = height;
@@ -257,5 +238,31 @@ module.exports = class Player extends Entity{
 
 //----------------------------------------------------------------------//
 
+var update_sprite = function(player,type){
+	switch(type){
+		case 'walk':
+			var bool_type = 'walking';
+			var max_count = 45;
+			var default_count = 1;
+			break;
+		case 'jump':
+			var bool_type = 'jumping';
+			var max_count = 15;
+			var default_count = 15;
+			break;
+	}
 
+	if(player[bool_type]){
+		if(player[type].count < max_count){
+			player[type].count++;
+		}else{
+			player[type].count = default_count;
+		}
+		player[type].frame = Math.ceil(player[type].count/5);
+	}else{
+		player[type].count = 1;
+		player[type].frame = 1;
+	}
+
+}
 

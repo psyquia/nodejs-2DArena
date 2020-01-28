@@ -1,9 +1,9 @@
 const Entity = require('./entity.js');
 
-var GLOBALS = {};
+//var GLOBALS = {};
 
 module.exports = class Bullet extends Entity{
-	constructor(global_p, parent, angle, vel){
+	constructor(GLOBALS, parent, angle, vel){
 		if(!arguments[3]){
 			var vel = 1;
 		}
@@ -17,11 +17,11 @@ module.exports = class Bullet extends Entity{
 		this.toRemove = false;
 		this.type = '';
 		this.hitbox = {px:this.x+4, py:this.y, width:7, height:5};
-		this.dmg = {normal:5, cone:2, wallbang:2.3};
-		GLOBALS = global_p;
+		this.dmg = {normal:5, cone:2, wallbang:2.5};
+		GLOBALS = GLOBALS;
 		GLOBALS.bullets[this.id] = this;
 	}
-	p_update(){
+	p_update(GLOBALS){
 		if(this.timer++>100)
 			this.toRemove = true;
 		for(var i in GLOBALS.platforms){
