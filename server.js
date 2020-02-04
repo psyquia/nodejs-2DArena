@@ -4,7 +4,8 @@ const Bullet = require('./modules/bullet.js');
 const Button = require('./modules/button.js');
 const Pickup = require('./modules/pickup.js');
 const Platform = require('./modules/platform.js');
-
+const login = require('./database.js');
+const bcrypt = require('bcrypt');
 
 ///*******************************************************///
 /// CHOOSE THE NUMBER OF PLAYERS IN A MATCH
@@ -345,6 +346,41 @@ Button.updateColor = function(pack,ID){
 }
 
 //----------------------------------------------------------------------//
+var SignMeIn = async function(user,socket){
+	login.getHash(user).then(function() {
+		bcrypt.compare(user.password, user.hash).then(function(res){
+			if(res){
+				Player.onConnect(socket);
+				socket.emit('sign_in_response', {success:true});
+				console.log("Logged in!");
+			}else{
+				console.log("Wrong password!");
+				socket.emit('sign_in_response', {success:false});
+			}
+		});
+	}).catch(err => {
+		console.log(err);
+		socket.emit('sign_in_response', {success:false});
+	});
+}
+
+//----------------------------------------------------------------------//
+var SignMeUp = async function(user, socket){
+	bcrypt.hash(user.password, 10).then(function(hash) {
+		user.hash = hash;
+		login.setUser(user).then(function() {
+			socket.emit('sign_up_response', {success:true});
+			console.log("user")
+		})
+	}).catch(err => {
+		console.log(err);
+		socket.emit('sign_up_response', {success:false});
+	});
+
+}
+
+
+//-------------------------------------------------------------//
 var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket){
 	if(!Object.size(SOCKET_LIST)){
@@ -359,7 +395,29 @@ io.sockets.on('connection', function(socket){
 	socket.id = Math.random();
 	SOCKET_LIST[socket.id] = socket;
 
-	Player.onConnect(socket);
+	con = {w: false};
+
+	socket.on('signIn', function(data){
+		SignMeIn(
+		{
+			username: data.username,
+			password: data.password,
+			hash: ''
+		}
+		,socket);
+	});
+
+	socket.on('signUp', function(data){
+		SignMeUp(
+		{
+			username: data.username,
+			password: data.password,
+			hash: ''
+		}
+		,socket);
+	});
+
+	
 
 	socket.on('disconnect', function(){
 		delete SOCKET_LIST[socket.id];

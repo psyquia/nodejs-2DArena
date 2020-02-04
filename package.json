@@ -4,7 +4,10 @@
   "description": "",
   "main": "app.js",
   "dependencies": {
+    "bcrypt": "^3.0.7",
     "express": "^4.17.1",
+    "mysql": "^2.18.1",
+    "password-hash": "^1.2.2",
     "socket.io": "^2.3.0"
   },
   "devDependencies": {},

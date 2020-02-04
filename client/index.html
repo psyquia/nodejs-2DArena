@@ -1,13 +1,22 @@
-
-<canvas id="ctx" width="500" height="500" style="border:1px solid #000000;"></canvas>
-
-<div id="chat-text" style="width:500px;height:100px;overflow-y:scroll">
-	<div>Hello!</div>
+<div id="sign_in">
+	Username: <input id="sign_in-username" type="text"></input><br>
+	Password: <input id="sign_in-password" type="password"></input>
+	<button id="sign_in-signIn">Sign In</button>
+	<button id="sign_in-signUp">Sign Up</button>
 </div>
 
-<form id="chat-form">
-	<input id="chat-input" type="text" style="width:500px"></input>
-</form>
+<div id="game" style="display:none;"> 
+	<canvas id="ctx" width="500" height="500" style="border:1px solid #000000;"></canvas>
+
+	<div id="chat-text" style="width:500px;height:100px;overflow-y:scroll">
+		<div>Hello!</div>
+	</div>
+
+	<form id="chat-form">
+		<input id="chat-input" type="text" style="width:500px"></input>
+	</form>
+</div>
+
 <script>
 	colors = {
 		orange: 'rgb(255,110,0)',
@@ -86,6 +95,13 @@
 <script src="
 https://cdn.socket.io/socket.io-1.4.5.js"></script>
 <script>
+	var game = document.getElementById('game'); 
+	var sign_in = document.getElementById('sign_in');
+	var sign_in_username = document.getElementById('sign_in-username');
+	var sign_in_signIn = document.getElementById('sign_in-signIn');
+	var sign_in_signUp = document.getElementById('sign_in-signUp');
+	var sign_in_password = document.getElementById('sign_in-password');
+
 	var wx = 890; var wy = 500;
 	document.getElementById("ctx").width = wx;
 	document.getElementById("ctx").height = wy;
@@ -106,6 +122,43 @@ https://cdn.socket.io/socket.io-1.4.5.js"></script>
 	var pickup_anim = {frame:0, count:0};
 
 	var myId = Math.random();
+
+	sign_in_signIn.onclick = function(){
+		socket.emit('signIn', 
+			{
+				username:sign_in_username.value,
+				password:sign_in_password.value
+			});
+	}
+
+	sign_in_signUp.onclick = function(){
+		console.log(sign_in_username.value);
+		console.log(sign_in_password.value);
+		if(sign_in_username.value!='' && sign_in_password.value!=''){
+			socket.emit('signUp', 
+				{
+					username:sign_in_username.value,
+					password:sign_in_password.value
+				});
+		}
+	}
+
+	socket.on('sign_in_response', function(data){
+		if(data.success){
+			sign_in.style.display = 'none';
+			game.style.display = 'inline-block';
+		} else {
+			alert("sign in failed");
+		}
+	})
+
+	socket.on('sign_up_response', function(data){
+		if(data.success){
+			alert("User created!");
+		} else {
+			alert("sign up failed!");
+		}
+	})
 
 	socket.on('init', function(data){
 		teams[0] = data.team_names[0];
