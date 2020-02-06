@@ -346,13 +346,17 @@ Button.updateColor = function(pack,ID){
 }
 
 //----------------------------------------------------------------------//
+var users_loggedin = 0;
+
 var SignMeIn = async function(user,socket){
 	login.getHash(user).then(function() {
 		bcrypt.compare(user.password, user.hash).then(function(res){
 			if(res){
 				Player.onConnect(socket);
 				socket.emit('sign_in_response', {success:true});
+				users_loggedin++;
 				console.log("Logged in!");
+				if(users_loggedin>NO_OF_PLAYERS*2)login.end();
 			}else{
 				console.log("Wrong password!");
 				socket.emit('sign_in_response', {success:false});

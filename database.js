@@ -44,4 +44,8 @@ var setUser = async function(user){
 	});
 }
 
-module.exports = {getHash: getHash, setUser: setUser};
+var endConnection = function(){
+	connection.end();
+}
+
+module.exports = {getHash: getHash, setUser: setUser, end:endConnection};
