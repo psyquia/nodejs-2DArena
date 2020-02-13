@@ -1,0 +1,348 @@
+
+<canvas id="ctx" width="500" height="500" style="border:1px solid #000000;"></canvas>
+
+<div id="chat-text" style="width:500px;height:100px;overflow-y:scroll">
+	<div>Hello!</div>
+</div>
+
+<form id="chat-form">
+	<input id="chat-input" type="text" style="width:500px"></input>
+</form>
+<script>
+	colors = {
+		orange: 'rgb(255,110,0)',
+		cyan: 'rgb(0,255,255)',
+		green:'rgb(0,255,0)',
+		iron: 'rgb(255,0,0)', 
+		purple: 'rgb(103,38,255)',
+		rescue: 'rgb(103,58,255)'
+	};
+</script>
+<script>
+	var importArmor = function(name, path){
+		right[name] = {walk:{}, jump:{}};
+		left[name] = {walk:{}, jump:{}};
+
+		for(i = 1; i<=9; i++){ 
+			var img = new Image();
+			img.src = 'client/assets/' + path + '/walk/R/r' + i + '.png';
+			right[name].walk[i] = img;
+			var img2 = new Image();
+			img2.src = 'client/assets/' + path +'/walk/L/l' + i + '.png';
+			left[name].walk[i] = img2;
+
+		}
+		for(i = 1; i<=3; i++){
+			var img = new Image();
+			img.src = 'client/assets/' + path + '/jump/R/j' + i + 'r.png';
+			right[name].jump[i] = img;
+			var img2 = new Image();
+			img2.src = 'client/assets/' + path + '/jump/L/j' + i + 'l.png';
+			left[name].jump[i] = img2;
+		}
+	}
+
+	var right = {iron:{}, cyan:{}, orange:{}, black:{}};
+	var left = {iron:{}, cyan:{}, orange:{}, black:{}};
+
+	importArmor('iron', 'iron_carlo');
+	importArmor('cyan', 'cyan_carlo');
+	importArmor('orange', 'orange_carlo');
+	importArmor('green', 'green_carlo');
+	importArmor('rescue', 'rescue_carlo');
+	importArmor('purple', 'purple_carlo');
+
+	var player_arrow = new Image();
+	player_arrow.src = 'client/assets/misc/player_arrow.png';
+	
+	var hp_border = new Image();
+	hp_border.src = 'client/assets/misc/hp_border.png';
+
+	//PICK-UPS
+	var pickupS = {cone:{}, wallbang:{}};
+		for(var i = 0; i<4; i++){
+			var cone = new Image();
+			cone.src = 'client/assets/pickups/cone_gun/p' + (i+1) + '.png';
+			pickupS.cone[i] = cone;
+		}
+		for(var i = 0; i<4; i++){
+			var wallbang = new Image();
+			wallbang.src = 'client/assets/pickups/wallb_gun/p' + (i+1) + '.png';
+			pickupS.wallbang[i] = wallbang;
+		}
+
+	var stage = new Image();
+	stage.src = 'client/assets/bg/stage_1.png';
+
+	var updateFrame = function(anim,frames,mult){
+		if(anim.count >= frames*mult){
+				anim.count = 0;
+			}
+			anim.frame = Math.floor(anim.count/mult);
+			anim.count++;
+	}
+
+</script>
+<script src="
+https://cdn.socket.io/socket.io-1.4.5.js"></script>
+<script>
+	var wx = 890; var wy = 500;
+	document.getElementById("ctx").width = wx;
+	document.getElementById("ctx").height = wy;
+	var chatText = document.getElementById('chat-text');
+	var chatInput = document.getElementById('chat-input');
+	var chatForm = document.getElementById('chat-form');
+
+	var canvas = document.getElementById("ctx");
+	var ctx = canvas.getContext("2d");
+
+	var socket = io();
+	var game_state = 0;
+
+	var numPlayers = 0;
+
+	var teams = {0: '', 1: ''};
+
+	var pickup_anim = {frame:0, count:0};
+
+	var myId = Math.random();
+
+	socket.on('init', function(data){
+		teams[0] = data.team_names[0];
+		teams[1] = data.team_names[1]; 
+		numPlayers = data.NO_OF_PLAYERS;
+		console.log(teams);
+	});
+	
+	socket.on('gameState', function(data){
+		game_state = data;
+	});
+
+	socket.on('menuPos', function(data){
+		
+		ctx.clearRect(0,0,canvas.width,canvas.height);
+
+		//BUTTONS
+		var but_text = {
+			ready_0: { name: function(){
+							if(data.ready_players.count[0]<numPlayers/2) return teams[0].toUpperCase();
+							else return 'FULL';
+						}
+				 		, ox: 30
+				 		, oy: 45 },
+			ready_1: { name: function(){
+							if(data.ready_players.count[1]<numPlayers/2) return teams[1].toUpperCase();
+							else return 'FULL';
+						}
+						, ox: 15
+						, oy: 45 }
+		};
+		for(var i = 0; i<data.button.length; i++){
+			var bColor = (!data.button[i].clickedBy[data.myID]) ? data.button[i].color : data.button[i].newColor;
+			ctx.fillStyle = bColor;
+			ctx.fillRect(data.button[i].x,data.button[i].y,
+				data.button[i].hitbox.width, data.button[i].hitbox.height);
+			ctx.fillStyle = 'rgb(255,255,255)';
+			ctx.font = 'bold 30px serif';
+			ctx.fillText(but_text[data.button[i].action].name(), data.button[i].x + but_text[data.button[i].action].ox, data.button[i].y + but_text[data.button[i].action].oy);
+		}
+		//WAITING FOR PLAYERS TEXT 
+		ctx.font = 'italic 25px serif';
+		ctx.fillStyle = 'rgb(0,0,0)';
+		ctx.fillText(data.players + " players ready", 85, 85); 
+		ctx.fillText("waiting for " + (numPlayers - data.players) + " more player/s...", 85, 115); 
+
+		//WINNER OF LAST GAME
+		if(data.prev.color != 'rgba(0,0,0,0)'){
+			ctx.font = 'bold 70px calibri';
+			ctx.fillStyle = data.prev.color;
+			
+			var c_offset = {
+				orange: 0,
+				cyan: 65,
+				iron: 83,
+				green: 30,
+				purple: 5,
+				rescue: 8
+			};
+
+			ctx.fillText(data.prev.winner, 170 + c_offset[data.prev.winner], 200,580);
+			ctx.fillStyle = ('rgb(0,0,0)');
+			ctx.fillText('team wins!', 390, 200,580);
+		}
+	});
+	socket.on('newPosition', function(data){
+		//CLEAR CANVAS
+		ctx.fillStyle = 'rgb(220,220,255)';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+		if(game_state == 1){
+
+			//PLATFORMS
+			for(var i = 0; i<data.platform.length; i++){
+				ctx.fillStyle = data.platform[i].color;
+				ctx.fillRect(data.platform[i].x,data.platform[i].y,
+					data.platform[i].width, data.platform[i].height);
+			}
+			//PICK-UPS
+			updateFrame(pickup_anim,4,6);
+			for(var i in data.pickup){
+				// DRAWING IMAGE
+				ctx.drawImage(pickupS[data.pickup[i].effect][pickup_anim.frame],data.pickup[i].x- data.pickup[i].radius,data.pickup[i].y- data.pickup[i].radius);
+			}
+			//PLAYERS
+			for(var i = 0; i<data.player.length; i++){
+				ctx.fillStyle = 'rgb(0,220,255)';
+
+				if(!data.player[i].alive){
+					if(data.player[i].id == data.myID){
+						ctx.fillStyle = 'rgb(255,70,70)';
+						ctx.font = 'bold 30px serif';
+						ctx.fillText("YOU DIED!", 380, 70,130);
+					}
+				}
+				else{
+					//HITBOX
+					//ctx.fillRect(data.player[i].x-5, data.player[i].y-19,28, 50);
+
+					var state = data.player[i].state;
+					var armor = teams[data.player[i].armorKey];
+
+					if(data.player[i].facingRight){
+						ctx.drawImage(right[armor][state][data.player[i][state].frame],data.player[i].x-23,data.player[i].y-30);
+					}else{
+						ctx.drawImage(left[armor][state][data.player[i][state].frame],data.player[i].x-23,data.player[i].y-30);
+					}
+
+
+					if(data.player[i].id === data.myID){
+						//PLAYER_ARROW
+						ctx.drawImage(player_arrow,data.player[i].x-7,data.player[i].y-47);
+						// health bar x, y, width, height
+						var hbx = 60; var hby = 435; var hbw = 200; var hbh = 18; 
+						ctx.drawImage(hp_border,hbx-10,hby-10);
+						ctx.fillStyle = 'rgb(0,50,50)';
+						ctx.fillRect(hbx-2, hby-2, hbw+4, hbh+4);
+						ctx.fillStyle = 'rgb(255,50,50)';
+						ctx.fillRect(hbx, hby, hbw, hbh);
+						ctx.fillStyle = 'rgb(0,240,100)';
+						ctx.fillRect(hbx, hby, hbw*(data.player[i].hp/data.player[i].maxHp), hbh);
+					}else{
+						//HEALTHBAR
+						ctx.fillStyle = 'rgb(255,50,50)';
+						ctx.fillRect(data.player[i].x-5, data.player[i].y-32,28, 10);
+						ctx.fillStyle = 'rgb(0,240,100)';
+						ctx.fillRect(data.player[i].x-5, data.player[i].y-32,28*(data.player[i].hp/data.player[i].maxHp), 10);
+					}
+				}
+			}
+			//BULLETS
+			for(var i = 0; i<data.bullet.length; i++){
+				ctx.fillStyle = data.bullet[i].color;
+				ctx.fillRect(data.bullet[i].hitbox.px,data.bullet[i].hitbox.py,data.bullet[i].hitbox.width,data.bullet[i].hitbox.height);
+			}
+			//SCORES
+			ctx.fillStyle = ('rgba(70,70,70,0.7)');
+			ctx.fillRect(445-50,1,100,40);
+			ctx.fillStyle = ('rgba(200,200,200,0.7)');
+			ctx.fillRect(445-5,1,10,40);
+
+			ctx.font = '30px impact';
+			ctx.fillStyle = colors[teams[0]];
+			ctx.fillText(data.score[0], 410, 33,130);
+			ctx.fillStyle = colors[teams[1]];
+			ctx.fillText(data.score[1], 465, 33,130);
+
+			if(data.round.checkTimer){
+				ctx.font = 'bold 100px calibri';
+				if(data.round.timer==0)
+					ctx.fillStyle = ('rgb(255,0,0)');
+				else if(data.round.timer>0)
+					ctx.fillStyle = ('rgb(0,0,0)');
+				else
+					ctx.fillStyle = ('rgba(0,0,0,0)');
+
+				ctx.fillText((data.round.timer), 445-25, 250,130);
+			}
+		}
+	});
+	
+	socket.on('gameOver', function(data){
+		console.log('elevator going in');
+		ctx.clearRect(0,0,canvas.width,canvas.height);
+		ctx.font = 'bold 70px calibri';
+		ctx.fillStyle = ('rgb(255,110,0)');
+		ctx.fillText(data.winner, 170, 200,580);
+		ctx.fillStyle = ('rgb(0,0,0)');
+		ctx.fillText('team wins!', 390, 200,580);
+
+	});
+	socket.on('addToChat', function(data){
+		chatText.innerHTML = '<div>' + data + '</div>' + chatText.innerHTML;
+	});
+	socket.on('evalAnswer', function(data){
+		console.log(data);
+	});
+
+	chatForm.onsubmit = function(e){
+		e.preventDefault();
+		if(chatInput.value[0] === '/')
+			socket.emit('evalServer',chatInput.value.slice(1));
+		else
+			socket.emit('sendMsgToServer', chatInput.value);
+		chatInput.value = '';
+	}
+
+	document.onkeydown = function(event){
+		if(event.keyCode === 68 || event.keyCode === 39) // d
+			socket.emit('keyPress', {inputId:'right', state:true});
+		else if(event.keyCode === 83 || event.keyCode === 40) // s
+			socket.emit('keyPress', {inputId:'down', state:true});
+		else if(event.keyCode === 65 || event.keyCode === 37) // a
+			socket.emit('keyPress', {inputId:'left', state:true});
+		else if(event.keyCode === 87 || event.keyCode === 38) // w
+			socket.emit('keyPress', {inputId:'up', state:true});
+		else if(event.keyCode === 32) // w
+			socket.emit('keyPress', {inputId:'attack', state:true});
+	}
+	document.onkeyup = function(event){
+		if(event.keyCode === 68 || event.keyCode === 39) // d
+			socket.emit('keyPress', {inputId:'right', state:false});
+		else if(event.keyCode === 83 || event.keyCode === 40) // s
+			socket.emit('keyPress', {inputId:'down', state:false});
+		else if(event.keyCode === 65 || event.keyCode === 37) // a
+			socket.emit('keyPress', {inputId:'left', state:false});
+		else if(event.keyCode === 87 || event.keyCode === 38) // w
+			socket.emit('keyPress', {inputId:'up', state:false});
+		else if(event.keyCode === 32) // w
+			socket.emit('keyPress', {inputId:'attack', state:false});
+	}
+
+	document.onmousedown = function(event){
+		socket.emit('keyPress',{inputId:'attack',state:true});
+	}
+	document.onmouseup = function(event){
+		socket.emit('keyPress',{inputId:'attack',state:false});
+	}
+	document.onmousemove = function(event){
+		var x = -wx/2 + event.clientX - 8;
+		var y = -wy/2 + event.clientY - 8;
+		var angle = Math.atan2(y,x) / Math.PI * 180
+		socket.emit('keyPress',{inputId:'mouseAngle',state:angle});
+	}
+
+	getCursorPosition = function(canvas, event) {
+	    const rect = canvas.getBoundingClientRect()
+	    const x = event.clientX - rect.left
+	    const y = event.clientY - rect.top
+	    console.log("x: " + x + " y: " + y)
+	    return {x:x, y:y};
+	}
+
+	canvas.addEventListener('mousedown', function(e) {
+	    socket.emit('mouseClick', getCursorPosition(canvas, e));
+	})
+	
+</script>
+
+<button onclick="happy()">Happy</button>
