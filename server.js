@@ -40,6 +40,11 @@ var game = {start: 0, running: 1, paused:2, over:3};
 /// CHOOSE TEAM COLORS: 0 => TEAM 1; 1 => TEAM 2
 var teams = {2:'cyan', 3:'orange', 0:'iron', 5:'green', 4:'purple', 1:'rescue'};
 
+var users = {};
+
+users.id = {};
+users.list = {};
+
 
 var prev_game = {winner: '', color: 'rgba(0,0,0,0)'};
 
@@ -50,6 +55,7 @@ GLOBALS.NO_OF_PLAYERS = NO_OF_PLAYERS;
 GLOBALS.ready_players = {};
 
 GLOBALS.SOCKET_LIST = SOCKET_LIST;
+
 
 GLOBALS.spawn = {};
 
@@ -349,37 +355,49 @@ Button.updateColor = function(pack,ID){
 var users_loggedin = 0;
 
 var SignMeIn = async function(user,socket){
+	if(user.username in users.list){
+		socket.emit('sign_in_response', {success:false, msg: "User is already logged in!"});
+		return;
+	} 
 	login.getHash(user).then(function() {
 		bcrypt.compare(user.password, user.hash).then(function(res){
 			if(res){
 				Player.onConnect(socket);
 				socket.emit('sign_in_response', {success:true});
+				users.list[user.username] = 1;
+				users.id[socket.id] = user.username;
 				users_loggedin++;
 				console.log("Logged in!");
 				if(users_loggedin>NO_OF_PLAYERS*2)login.end();
 			}else{
 				console.log("Wrong password!");
-				socket.emit('sign_in_response', {success:false});
+				socket.emit('sign_in_response', {success:false, msg: "Wrong password or user does not exist!"});
 			}
 		});
 	}).catch(err => {
 		console.log(err);
-		socket.emit('sign_in_response', {success:false});
+		socket.emit('sign_in_response', {success:false, msg: "Wrong password or user does not exist!"});
 	});
 }
 
 //----------------------------------------------------------------------//
 var SignMeUp = async function(user, socket){
-	bcrypt.hash(user.password, 10).then(function(hash) {
-		user.hash = hash;
-		login.setUser(user).then(function() {
-			socket.emit('sign_up_response', {success:true});
-			console.log("user")
-		})
-	}).catch(err => {
-		console.log(err);
-		socket.emit('sign_up_response', {success:false});
+	login.userExists(user).then(function(){
+		socket.emit('sign_up_response', {success:false});	
+	}).catch(err =>{
+		bcrypt.hash(user.password, 10).then(function(hash) {
+			user.hash = hash;
+			login.setUser(user).then(function() {
+				socket.emit('sign_up_response', {success:true, user:user});
+				console.log("user")
+			})
+		}).catch(err => {
+			console.log(err);
+			socket.emit('sign_up_response', {success:false});
+		});
+		socket.emit('sign_up_response', {success:true});
 	});
+	
 
 }
 
@@ -424,8 +442,10 @@ io.sockets.on('connection', function(socket){
 	
 
 	socket.on('disconnect', function(){
-		delete SOCKET_LIST[socket.id];
+		delete users.list[users.id[socket.id]];
+		delete users.id[socket.id];
 		Player.onDisconnect(socket);
+		delete SOCKET_LIST[socket.id];
 	});
 
 	socket.on('sendMsgToServer', function(data){

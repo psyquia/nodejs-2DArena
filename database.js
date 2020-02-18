@@ -44,8 +44,23 @@ var setUser = async function(user){
 	});
 }
 
+var userExists = async function(user){
+	return new Promise(function(resolve, reject){
+		var sql = "SELECT username FROM users WHERE username = ?";
+		connection.query(sql, [user.username], function(err,result,fields){
+			if (err){
+				reject('SQL Query Error');
+			}
+			if(result.length>0){
+				resolve('user found');
+			}
+			reject('user does not exit');
+		});
+	});
+}
+
 var endConnection = function(){
 	connection.end();
 }
 
-module.exports = {getHash: getHash, setUser: setUser, end:endConnection};
+module.exports = {getHash: getHash, setUser: setUser, userExists:userExists, end:endConnection};
