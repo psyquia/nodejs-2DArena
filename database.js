@@ -20,9 +20,10 @@ var getHash = async function(user){
 		var sql = "SELECT hashed_pass FROM users WHERE username = ?";
 		connection.query(sql, [user.username], function(err,result,fields){
 			if (err){
+				console.log(err);
 				reject('SQL Query Error');
 			} 
-			if(result.length>0){
+			else if(result.length>0){
 				user.hash = result[0].hashed_pass;
 			}else{
 				reject("User was not found");
@@ -51,7 +52,7 @@ var userExists = async function(user){
 			if (err){
 				reject('SQL Query Error');
 			}
-			if(result.length>0){
+			else if(result.length>0){
 				resolve('user found');
 			}
 			reject('user does not exit');

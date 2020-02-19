@@ -451,7 +451,7 @@ io.sockets.on('connection', function(socket){
 	socket.on('sendMsgToServer', function(data){
 		var playerName = users.id[socket.id];
 		for(var i in SOCKET_LIST){
-			SOCKET_LIST[i].emit('addToChat',playerName + ": " + data);
+			SOCKET_LIST[i].emit('addToChat',{playerName:playerName, msg:data});
 		}
 	});
 

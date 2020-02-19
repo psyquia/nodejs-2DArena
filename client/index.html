@@ -26,7 +26,7 @@
 			<div>Hello!</div>
 		</div>
 		<form id="chat-form" autocomplete="off" >
-			<input id="chat-input" type="text"></input>
+			<input id="chat-input" placeholder="Type a chat message here" type="text"></input>
 		</form>
 	</div>
 </div>
@@ -347,8 +347,9 @@ https://cdn.socket.io/socket.io-1.4.5.js"></script>
 
 	});
 	socket.on('addToChat', function(data){
-		chatText.innerHTML = chatText.innerHTML + '<div>' + data + '</div>';
-		chatText.scrollTop += 20 ;
+		var msg = "<label for='usrn'>" + data.playerName + ":</label> " + data.msg;
+		chatText.innerHTML =  chatText.innerHTML + "<div>" + msg + "</div>";  
+		chatText.scrollTop += chatText.innerHTML.length ;
 	});
 	socket.on('evalAnswer', function(data){
 		console.log(data);
