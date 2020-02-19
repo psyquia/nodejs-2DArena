@@ -395,7 +395,6 @@ var SignMeUp = async function(user, socket){
 			console.log(err);
 			socket.emit('sign_up_response', {success:false});
 		});
-		socket.emit('sign_up_response', {success:true});
 	});
 	
 
