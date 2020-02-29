@@ -1,7 +1,5 @@
 # nodejs-2DArena
-**Online 2D Arena Shooter**
-<br>
-***Carlo Fighting Game***
+**Online 2D Arena Shooter** - ***Carlo Fighting Game***
 
 *Background:*  
 I made this game for my 4 year old brother. He loves Iron Man!    
